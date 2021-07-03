@@ -170,15 +170,21 @@ lagrange <- list(
   "month"  = lm_test(mods_linear_mo, weights = sp_wts$mo_lw)
 )
 
-lagrange2 <- lagrange %>% map(function(x){
-  x %>% filter(str_starts(Test, "RLM")) %>%
-    mutate(val = sprintf("%s\\n[%s]",
-                         format(round(Stat, 3)),
-                         format(round(Pval, 3)))) %>%
-    select(DV, Test, val) %>%
-    pivot_wider(names_from  = DV,
-                values_from = val)
-})
+lagrange2 <- lagrange %>%
+  map(function(x){x %>% filter(str_detect(Test, "RLM"))} ) %>%
+  bind_rows(.id = "Agg") %>%
+  pivot_longer(cols = Stat:Pval,
+               names_to = "stat",
+               values_to = "val") %>%
+  mutate(val  = format(val, digits = 0, nsmall = 3,
+                       scientific = F, trim = T)) %>%
+  mutate(val  = case_when(stat == "Pval" ~ sprintf("(%s)",val), TRUE ~ val),
+         Agg  = case_when(Agg == "halfyr" ~ "Half-year", TRUE ~ "Month"),
+         Test = case_when(Test == "RLMerr" ~ "Error", TRUE ~ "Lag")) %>%
+  pivot_wider(id_cols = c(Agg, Test, stat),
+              names_from = DV,
+              values_from = val) %>%
+  select(-stat)
 # ----------------------------------- #
 #-----------------------------------------------------------------------------#
 
@@ -252,6 +258,31 @@ rm(SIGACT, ICEWS, GED)
 screenreg(l = mods_spatial_mo,
           custom.coef.map = var_names(mods_spatial_mo))
 # ----------------------------------- #
+
+
+# ----------------------------------- #
+# Create tidy spatial models for table
+# ----------------------------------- #
+mods_spatial_hy_tidy <- lapply(mods_spatial_hy, function(x){
+  tmp <- broom::tidy(lmtest::coeftest(x))
+  tmp <- createTexreg(coef.names = tmp$term,
+                      coef       = tmp$estimate,
+                      se         = tmp$std.error,
+                      pvalues    = tmp$p.value,
+                      gof.names  = c("Num. obs."),
+                      gof        = c(832))
+})
+
+mods_spatial_mo_tidy <- lapply(mods_spatial_mo, function(x){
+  tmp <- broom::tidy(lmtest::coeftest(x))
+  tmp <- createTexreg(coef.names = tmp$term,
+                      coef       = tmp$estimate,
+                      se         = tmp$std.error,
+                      pvalues    = tmp$p.value,
+                      gof.names  = c("Num. obs."),
+                      gof        = c(6032))
+})
+# ----------------------------------- #
 #-----------------------------------------------------------------------------#
 
 
@@ -290,7 +321,34 @@ screenreg(l = mods_spatial_mo,
 #-----------------------------------------------------------------------------#
 # SAVE                                                                    ----
 #-----------------------------------------------------------------------------#
-save(list = ls()[str_detect(ls(), "mods_|lagrange|var_")],
-     file = "data/Oxford_HB_2021_APSA-Models-Discrete.Rdata")
+
+# ----------------------------------- #
+# Variable names for models
+# ----------------------------------- #
+names_linear <- var_names(mods_linear_hy)
+names_linear[4:12] <- c("Condolence spending",
+                        "Ruzicka spending",
+                        "Coalition collateral damage",
+                        "Insurgent collateral damage",
+                        "Other small CERP spending",
+                        "Other USAID spending",
+                        "Coalition troop strength",
+                        "CMOC presence",
+                        "PRT presence")
+
+names_spatial <- var_names(mods_spatial_hy)
+names_spatial[5:13] <- c("Condolence spending",
+                        "Ruzicka spending",
+                        "Coalition collateral damage",
+                        "Insurgent collateral damage",
+                        "Other small CERP spending",
+                        "Other USAID spending",
+                        "Coalition troop strength",
+                        "CMOC presence",
+                        "PRT presence")
+# ----------------------------------- #
+
+# save(list = ls()[str_detect(ls(), "mods_|lagrange|var_|names_")],
+#      file = "data/Oxford_HB_2021_APSA-Models-Discrete.Rdata")
 rm(list = ls())
 #-----------------------------------------------------------------------------#
