@@ -33,12 +33,12 @@ library(tidyverse)
 #---------------------------#
 # Set working directory
 #---------------------------#
-setwd("c:/users/logan/googledrive/umn/research/ra_john/2021 - Time Series - RINLA")
+# setwd("c:/users/logan/googledrive/umn/research/ra_john/2021 - Time Series - RINLA")
 
 #---------------------------#
 # Load data
 #---------------------------#
-silver <- readstata13::read.dta13("Data/Silverman-Replication-Data/CP_Data_Final_Monthly -- 3-29-20.dta")
+silver <- readstata13::read.dta13("Scripts/silverman-replication/silverman-replication-data/CP_Data_Final_Half-Year -- 3-29-20.dta")
 d      <- read_csv("Data/IRQmonthly.csv")
 
 
@@ -63,7 +63,7 @@ d      <- read_csv("Data/IRQmonthly.csv")
 
 silver <- silver %>%
   # Select relevant variables
-  select(district, districtid, month,
+  select(district, districtid, halfyr,
          p_S1, p_spentcptotal, p_spentruzicka,
          coalitioncc, insurgentcc,
          p_spentcerpsmall_noncp, p_spentusaid_nonruzicka,
@@ -77,7 +77,7 @@ silver <- silver %>%
   tidyr::drop_na(p_S1_d) %>%
 
   # Final variable select
-  select(district, districtid, month,
+  select(district, districtid, halfyr,
          ends_with("_d"), cmoc, dis_usprt, POP,
          starts_with(c("halfyr", "su_vh")))
 
@@ -102,7 +102,8 @@ d2 <- d %>%
 
   summarize(across(starts_with(c("p_","a_of_batt")), mean),
             across(starts_with(c("cmoc","dis_usprt","halfyr","su_vh")), max),
-            POP = POP[1]) %>%
+            POP = POP[1],
+            .groups = "keep") %>%
   ungroup() %>%
 
   # Drop last half-year (Silverman does not include halfyrid == 98)
@@ -128,7 +129,7 @@ d2 <- d %>%
 # Compare first 10 rows of data to ensure equality
 
 vrs <- c("p_S1_d", "p_spentcptotal_d","p_spentruzicka_d")
-vrs <- c("a_of_batt_d","cmoc_d","dis_usprt_d")
+# vrs <- c("a_of_batt_d","cmoc_d","dis_usprt_d")
 
 cbind(d2[1:10,vrs], silver[1:10,vrs])
 
@@ -154,7 +155,7 @@ library(plm)
 
 rm(list=ls())
 
-silver <- readstata13::read.dta13("Data/Silverman-Replication-Data/CP_Data_Final_Monthly -- 3-29-20.dta")
+silver <- readstata13::read.dta13("Data/Silverman-Replication-Data/CP_Data_Final_Half-Year -- 3-29-20.dta")
 
 f <- as.formula(paste("diff(p_S1) ~ lag(diff(p_spentcptotal)) + lag(diff(p_spentruzicka)) +
            lag(diff(coalitioncc)) + lag(diff(insurgentcc)) + lag(diff(p_spentcerpsmall_noncp)) +
@@ -164,9 +165,29 @@ f <- as.formula(paste("diff(p_S1) ~ lag(diff(p_spentcptotal)) + lag(diff(p_spent
                       paste(sprintf("su_vh%s", 1:11), collapse = " + ")))
 
 
+
 # silver <- silver %>% filter(district != "Karkh")
 
-d <- pdata.frame(silver, index = c("districtid","month"))
+d <- silver
+d2 <- d %>% filter(district != "Karkh")
+
+
+d2 <- d %>%
+  filter(district != "Karkh") %>%
+  # group_by(district) %>%
+  mutate(d_y  = p_S1 - dplyr::lag(p_S1, 1),
+         d_x1 = p_spentcptotal - dplyr::lag(p_spentcptotal,1),
+         d_x2 = p_spentruzicka - dplyr::lag(p_spentruzicka, 1)) %>%
+  ungroup()
+
+f <- as.formula(paste("d_y ~ d_x1 + d_x2 + ",
+                      paste(sprintf("halfyr%s",2:10), collapse = " + "), " + ",
+                      paste(sprintf("su_vh%s", 2:10), collapse = " + ")))
+
+lm(formula = f, data = d2)
+
+d <- pdata.frame(d, index = c("districtid","month"))
+d2 <- pdata.frame(d2, index = c("districtid","month"))
 
 m <- plm(formula = f,
          data    = d,
@@ -175,6 +196,8 @@ m <- plm(formula = f,
 nm = as.list(names(coef(m))[2:10])
 names(nm) = names(coef(m))[2:10]
 
+
+library(texreg)
 screenreg(m, digits = 2, custom.coef.map = nm)
 
 #-----------------------------------------------------------------------------#

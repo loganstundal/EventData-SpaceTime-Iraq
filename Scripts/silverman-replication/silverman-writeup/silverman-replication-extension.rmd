@@ -1,0 +1,193 @@
+---
+title: "Silverman Replication and Extension"
+author: "Logan Stundal"
+date: "6/17/2021"
+output:
+  bookdown::pdf_document2:
+    keep_tex: no
+    fig_caption: yes
+    number_sections: no
+    toc: no
+    latex_engine: pdflatex
+    citation_package: natbib
+header-includes:
+  - \usepackage{graphics}
+  - \usepackage{pdflscape}
+  - \usepackage{booktabs}
+  - \usepackage{rotating}
+  - \usepackage{threeparttable}
+  - \usepackage{dcolumn}
+  - \usepackage[bottom, hang]{footmisc}
+bibliography: c:/users/logan/googledrive/umn/research/references/library.bib
+biblio-style: c:/users/logan/googledrive/umn/research/references/csl-formats/apsrnourl
+fontsize: 12pt
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+
+library(texreg)
+library(purrr)
+library(dplyr)
+library(spatialreg)
+library(kableExtra)
+load("silverman-models.Rdata")
+load("spatial-extension.Rdata")
+```
+
+### Silverman Replication
+In Table 1, Silverman's published models are designated by (a). He drops observations for the "Karkh" which are a neighborhood in Baghdad. I do not recall this being mentioned anywhere in the paper or appendix. I included these observations in model (c) and they do not impact the results in any way, so it is not clear why they are dropped.
+
+Based on the results, the original findings appear highly sensitive to the inclusion of population observation weights. Removing the weights from the model [models (b) and (d) in the table] reveals that the results for "Ruzicka spending" are highly sensitive to the weights. In the models that include the weights the parameter on this variable is negative and significant while in the models that exclude the weights this variable is positive and insignificant. In contrast, the inclusion or exclusion of the weights does not change the sign on the "Condolence spending" variable and (for the models with additional controls) also does not impact its significance. 
+
+To be fair, I attempted and failed to recover the significance on the Ruzicka variable with other population weights including: logged population and population per square km. The sign and significance of that parameter on Ruzicka spending appead to depend on using only population weights in raw counts.
+
+Since it is terribly small in the footnote of Table 1, the following specifications refer to the model names:
+\begin{itemize}
+  \item (a) - Silverman's model
+  \item (b) - Excludes population analytic weights
+  \item (c) - Includes Baghdad observations (retains weights)
+  \item (d) - Excludes weights and includes Baghdad
+\end{itemize}
+
+In Table 2 I estimated a few additional models which individually dropped each Fixed Effect (District, Half-Year, and Sunni Vote Share) and then all Fixed Effects to see how the results held up. 
+
+In order to more clearly see the effect of each change relative to the published results, I retained clustered standard errors in all of the presented models.
+
+Finally, following this replication and robustness checking of his results, I extend Silverman's models to a spatio-temporal framework with these results appearing in Table 3. For maximum comparability, I retained all of Silverman's Fixed Effects in the spatial-temporal models to see the consequences of what the panel fixed effects approach misses by not considering dynamics.
+
+\pagebreak
+
+\thispagestyle{empty}
+\newgeometry{margin=0.5in}
+```{r results = "asis"}
+knitreg(l = mods,
+        custom.coef.map    = vars,
+        custom.header      = list("Model 1" = 1:4,
+                                  "Model 2" = 5:8,
+                                  "Model 3" = 9:12,
+                                  "Model 4" = 13:16),
+        custom.model.names = rep(sprintf("(%s)",letters[1:4]),4),
+        override.se        = map(se_pvs, "clse"),
+        override.pvalues   = map(se_pvs, "pvals"),
+        custom.note        = my_note,
+        threeparttable     = TRUE,
+        caption.above      = TRUE,
+        caption            = "Silverman Replication",
+        dcolumn            = TRUE,
+        float.pos          = "!ht",
+        sideways           = TRUE,
+        table              = TRUE,
+        booktabs           = TRUE,
+        center             = TRUE,
+        fontsize           = "footnotesize",
+        no.margin          = TRUE)
+```
+     
+\restoregeometry
+  
+\pagebreak 
+  
+\begin{landscape}
+```{r results = 'asis'}
+knitreg(l = list(mods[[13]], m4.no.unit, m4.no.time, m4.no.suvs, m4.no.fes),
+        custom.coef.map = vars,
+        custom.model.names = c("Published Model", "No unit FEs", "No time FEs", "No Sunni VS FEs", "No FEs"),
+        caption.above      = TRUE,
+        caption            = "Silverman Fixed Effects Robusness Check",
+        custom.note        = paste0("\n\\item %stars.",
+                                    "\\item For all models I retained standard errors clustered on districts for comparability to Table 1."),
+        threeparttable     = TRUE,
+        dcolumn            = TRUE,
+        float.pos          = "!ht",
+        table              = TRUE,
+        booktabs           = TRUE,
+        center             = TRUE)
+```
+\end{landscape}
+  
+\pagebreak
+
+  
+
+## Silverman Spatial Extension
+
+To investigate missing spatio-temporal dynamics in Silverman's models, I focused on his Model 4 specification and closely examined the effects of his primary "Condolence spending" variable since that one alone is robust to the inclusion or exclusion of population weights. Since I could not see a reason to drop the Baghdad observations, I also included those in the spatial model. Therefore, I contrast the specification in Model 4 (d)^[The `lagsarlm()` function from `spatialreg` does not support weights on observations, but the spatial error specification does.] in Table 1 with a spatio-temporal model, but will re-estimate that model in an non-spatial setup to account for lost-observations due to the inclusion of a temporal lag of the DV.
+
+<!-- \begin{itemize} -->
+<!--   \item A one-unit increase in condolence spending per capita leads to a decrease in approximately 0.6 [0.2, 0.9] significant events per capita. -->
+<!-- \end{itemize} -->
+
+### Dependent Variable
+
+Mapping the data over time - SIGACTs (unsurprisingly) demonstrates clear spatial and temporal trends:
+\begin{figure}[!ht]
+  \centering
+  \includegraphics[width=6.5in]{sigact-map.png}
+  \caption{SIGACT Events}
+\end{figure}
+
+\pagebreak 
+
+### Spatial Model
+
+Table 3 presents Silverman's Model 4 specification modified both to: (1) include a temporal lag of the dependent variable^[I will ignore this model and only put it here for comparability] and (2) include a spatial and temporal lag of the dependent variable. The following compares the change to the parameter estimated for the Condolence spending variable compared between the non-spatial, non-temporal specification in Table 1 - Model 4(d) vs the spatio-temporal model in Table 3:  
+
+\begin{tabular}{ l l }
+  \textbullet\ Non-spatial Model 4 (d): & -0.573 [-1.132, -0.014] \\
+  \textbullet\ Spatio-temporal: & -0.666 [-1.042, -0.289]
+\end{tabular}
+
+```{r results = "asis", fig.pos = "!ht"}
+knitreg(list(m1ex,m1sp_tidy),
+        custom.coef.map = c(vars, "rho" = "Rho", p_S1_d_lag = "Phi"),
+        include.rsquared = F,
+        include.adjrs = F,
+        custom.model.names = c("Model 4(d) + Temporal Lag", "Spatio-Temporal"),
+        caption.above      = TRUE,
+        caption            = "Spatio-temporal Extension",
+        custom.note        = paste0("\n\\item %stars.",
+                                    "\\item Rho - spatial lag",
+                                    "\\item Phi - temporal lag",
+                                    "\\item Model includes: District, half-year, and Sunni vote share fixed effects"),
+        threeparttable     = TRUE,
+        dcolumn            = TRUE,
+        float.pos          = "!ht",
+        table              = TRUE,
+        booktabs           = TRUE,
+        center             = TRUE)
+```
+
+\pagebreak 
+
+### Spatial Marginal Effects
+
+Since the spatio-temporal model also has significant and positive parameter estimates of Phi and Rho on the temporal and spatial lags respectively, the above parameter values, although greater in magnitude than what Silverman estimated, still represent only an initial impulse and are therefore likely smaller than the true spatio-temporal dynamic effect of unit-changes in Condolence spending on SIGACT events. Therefore, I also estimate the dynamic responses and marginal response paths to unit changes using this framework.
+
+Table 4 presents the Long-Run-Steady-State equilibrium SIGACT response to a 1-unit change in Condolence spending^[Marginal effects derived by [@LeSage2008] and implemented in spatio-temporal by [@Franzese2007].]. In contrast to the dummy-like-mad-for-everything approach that Silverman employed, this reveals that the standard Fixed Effects setup underestimates the parameter on this variable about about half: -1.102 total spatio-temporal effect point estimate vs. -0.575 in the non-spatial model. It would useful to compare the LRSS response values across SIGACTs, ICESWs, and GED. 
+
+```{r fig.pos="!ht"}
+lrss %>% select(Type, to_table) %>% 
+  kbl(x = .,
+      position  = "!ht",
+      caption   = "Condolence spending - marginal effect estimates",
+      col.names = c("Effect", "Estimate"), 
+      booktabs  = TRUE) %>% 
+  kable_classic(full_width = F) %>%
+  column_spec(1, width = "1.25in") %>% 
+  column_spec(2, width = "2.00in")
+```
+
+As one final domain for possible comparisio between our three data sources, Figure 2 presents the estimated counterfactual change in SIGACT events in the Tarmia district of Iraq had US forces allocated an additional dollar per capita of condolence funding in neighboring Falluja district starting in the first-half of 2005. It would be interesting to contextualize these values further (and again compare to ICEWS / GED) since I know this region deteriorated significantly starting in 2006 before the troop surge. 
+
+\begin{figure}[!ht]
+  \centering
+  \includegraphics[width=6.5in]{marginal-response-ex.png}
+  \caption{Dynamic response path}
+\end{figure}
+
+It is possible to estimate confidence intervals for these response paths using either the Delta Method or parametric simulation (my preferred approach). But, when prepping this plot I remembered that Jude and Rob's code is really inefficient for this. Right now a simulation approach requires nearly 700 million calculations for 1000 simulation iterations $((n*t)^2 * 1000)$ which fills up the available memory on my laptop.
+
+\pagebreak
+
+
