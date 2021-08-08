@@ -188,14 +188,27 @@ inla_cplot <- function(data, type,
   pltdat <- data %>%
     bind_rows(., .id = "model") %>%
     # mutate(model = stringr::str_remove(model, "_bias_bias")) %>%
-    mutate(model = stringr::str_to_upper(model)) %>%
+    mutate(model = stringr::str_to_upper(model))
+
+  pltdat <- pltdat %>%
+    group_by(model, type) %>%
+    mutate(order = 1:n()) %>%
+    ungroup %>%
+    mutate(order = case_when(variable == "Phi"       ~ as.integer(100),
+                             variable == "Intercept" ~ as.integer(101),
+                             variable == "Range"     ~ as.integer(102),
+                             TRUE ~ order)) %>%
+    arrange(model, type, order)
+
+
+  pltdat <- pltdat %>%
     filter(type == !!type,
            !variable %in% drop_vars) %>%
     group_by(model, type) %>%
-    mutate(y = 1:n()) %>%
+    mutate(y = n():1) %>%
     ungroup %>%
-    mutate(z = case_when(model == "ICEWS" ~  0.1,
-                         model == "GED"   ~ -0.1,
+    mutate(z = case_when(model == "ICEWS" ~  0.125,
+                         model == "GED"   ~ -0.125,
                          TRUE ~ 0)) %>%
     mutate(y = y + z) %>%
     # filter(!str_detect(model, "bias")) %>%
@@ -208,14 +221,14 @@ inla_cplot <- function(data, type,
     geom_point(aes(x = median)) +
     geom_errorbar(aes(xmin = lb, xmax = ub)) +
     scale_y_continuous(breaks = 1:length(vars),
-                       labels = vars) +
+                       labels = rev(vars)) +                        ################
     scale_color_manual(values = {{colors}}) +
     my_theme
 
   return(plt)
 }
 
-fixed <- inla_cplot(data      = params[4:5],
+fixed <- inla_cplot(data      = params[1:3],
                     type      = "fixed",
                     color     = model_colors,
                     drop_vars = c("Ruzicka Spending (PC)","Intercept")) +
@@ -296,6 +309,6 @@ ggsave(plot     = final_cplot,
        dpi      = 350,
        units    = "in")
 # ----------------------------------- #
-
-#rm(list = ls())
 #-----------------------------------------------------------------------------#
+
+rm(list = ls())
