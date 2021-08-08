@@ -42,6 +42,7 @@ library(stars)
 # Load data
 #---------------------------#
 load("Results/Estimates/results-spde.Rdata")
+load("Results/Estimates/estimate-table-params.Rdata")
 #---------------------------#
 
 #---------------------------#
@@ -153,6 +154,110 @@ field_plt_ged
 
 
 #-----------------------------------------------------------------------------#
+# COEF PLOT                                                               ----
+#-----------------------------------------------------------------------------#
+model_colors        <- c("#7CAE00", "#F8766D", "#00BFC4")
+names(model_colors) <- c("SIGACTS","ICEWS","GED")
+
+
+my_theme <- theme(axis.title         = element_blank(),
+                  panel.background   = element_rect(fill   = "transparent",
+                                                    colour = "black",
+                                                    size   = 0.3),
+                  panel.border       = element_rect(colour = "black",
+                                                    fill   = NA,
+                                                    size   = 0.3),
+                  panel.grid         = element_blank(),
+                  panel.grid.major.x = element_line(linetype = "dotted",
+                                                    color    = "gray70",
+                                                    size     = 0.2),
+                  strip.background   = element_rect(fill     = NA,
+                                                    linetype = "solid",
+                                                    size     = 0.3),
+                  strip.text         = element_text(size = 10),
+                  legend.position    = "bottom",
+                  legend.direction   = "horizontal",
+                  legend.title       = element_blank(),
+                  legend.key         = element_rect(fill = "transparent"))
+
+
+
+inla_cplot <- function(data, type,
+                       colors,
+                       drop_vars    = NULL){
+  pltdat <- data %>%
+    bind_rows(., .id = "model") %>%
+    # mutate(model = stringr::str_remove(model, "_bias_bias")) %>%
+    mutate(model = stringr::str_to_upper(model)) %>%
+    filter(type == !!type,
+           !variable %in% drop_vars) %>%
+    group_by(model, type) %>%
+    mutate(y = 1:n()) %>%
+    ungroup %>%
+    mutate(z = case_when(model == "ICEWS" ~  0.1,
+                         model == "GED"   ~ -0.1,
+                         TRUE ~ 0)) %>%
+    mutate(y = y + z) %>%
+    # filter(!str_detect(model, "bias")) %>%
+    mutate(model = factor(model, levels = c("ICEWS","SIGACTS","GED")))
+
+  vars    <- pltdat %>% filter(model == "SIGACTS") %>% pull(variable)
+
+
+  plt <- ggplot(data = pltdat, aes(y = y, color = model)) +
+    geom_point(aes(x = median)) +
+    geom_errorbar(aes(xmin = lb, xmax = ub)) +
+    scale_y_continuous(breaks = 1:length(vars),
+                       labels = vars) +
+    scale_color_manual(values = {{colors}}) +
+    my_theme
+
+  return(plt)
+}
+
+fixed <- inla_cplot(data      = params[4:5],
+                    type      = "fixed",
+                    color     = model_colors,
+                    drop_vars = c("Ruzicka Spending (PC)","Intercept")) +
+  theme(legend.position = "none") +
+  labs(title    = "Conflict Models - Coefficient Estimates and 95% HPD",
+       subtitle = "Fixed Effects")
+fixed
+
+hyper <- inla_cplot(data      = params[1:3],
+                    type      = "hyper",
+                    color     = model_colors,
+                    drop_vars = c("Range")) +
+  theme(legend.position = "none") +
+  labs(subtitle = "GMRF Hyperparameters")
+hyper
+
+range <- inla_cplot(data      = params[1:3],
+                    type      = "hyper",
+                    color     = model_colors,
+                    drop_vars = c("Rho","Sigma","Kappa")) +
+  xlim(0,1000)
+range
+
+# LEGEND (extract from Range and update range to no legend)
+plt_legend <- get_legend(range)
+range      <- range + theme(legend.position = "none")
+
+# Event - full plot
+final_cplot <- plot_grid(fixed,
+                         hyper,
+                         range,
+                         plt_legend,
+                         rel_heights = c(3,1.5,.75,.3),
+                         nrow  = 4,
+                         align = "v",
+                         axis  = "l")
+final_cplot
+#-----------------------------------------------------------------------------#
+
+
+
+#-----------------------------------------------------------------------------#
 # SAVE                                                                    ----
 #-----------------------------------------------------------------------------#
 # ----------------------------------- #
@@ -180,6 +285,17 @@ ggsave(plot     = field_plt_ged,
        units    = "in")
 # ----------------------------------- #
 
+
+# ----------------------------------- #
+# Save conflict coef plot
+# ----------------------------------- #
+ggsave(plot     = final_cplot,
+       filename = "Results/Figures/figure-cplot-conflict.png",
+       width    = 6.5,
+       height   = 8.5,
+       dpi      = 350,
+       units    = "in")
+# ----------------------------------- #
 
 #rm(list = ls())
 #-----------------------------------------------------------------------------#

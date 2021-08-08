@@ -59,6 +59,29 @@ names(bias_params) <- paste0(names(bias_params),"_bias")
 
 params <- c(conflict_params, bias_params)
 
+var_names <- c(
+  "sigacts_l"                 = "Phi",
+  "icews_l"                   = "Phi",
+  "ged_l"                     = "Phi",
+  "sigacts2"                  = "SIGACTS",
+  "p_spentcptotal_d"          = "Condolence Spending (PC)",
+  "p_spentruzicka_d"          = "Ruzicka Spending (PC)",
+  "coalitioncc_d"             = "Coalation Collateral Damage",
+  "insurgentcc_d"             = "Insurgent Collateral Damage",
+  "p_spentcerpsmall_noncp_d"  = "Other Small CERP Spending",
+  "p_spentusaid_nonruzicka_d" = "Other USAID Spending",
+  "a_of_batt_d"               = "Coalition Troop Strenght",
+  "cmoc"                      = "CMOC Presence",
+  "dis_usprt"                 = "PRT Presence"
+)
+
+
+params <- lapply(params, function(x){
+  x <- x %>%
+    mutate(variable = recode(variable, !!!var_names))
+})
+
+
 save(params, file = "Results/Estimates/estimate-table-params.Rdata")
 #-----------------------------------------------------------------------------#
 
