@@ -1,0 +1,80 @@
+---
+title: "SPDE-Temporal Models"
+# author: "Logan Stundal"
+date: "8/4/2021"
+output:
+  bookdown::pdf_document2:
+    keep_tex: no
+    toc: no
+    fig_caption: yes
+    latex_engine: pdflatex
+    number_sections: no
+    citation_package: natbib
+  bookdown::html_document2:
+    toc: no
+    df_print: paged
+    number_sections: false
+header-includes:
+- \usepackage{lscape}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
+
+# load("writeup.Rdata")
+
+library(texreg)
+library(sf)
+library(kableExtra)
+library(dplyr)
+
+source("../../scripts/fn_inla-table.R")
+load("../../Results/Estimates/estimate-table-params.Rdata")
+```
+
+
+
+# Document overview:
+
+# Notes
+
+* The temporal dependence parameter (Rho) appears to be dependent on the choice of prior on Range in the SPDE
+
+\begin{landscape}
+```{r}
+inla_table(params      = params, 
+           header      = c(" " = 1, "Conflict" = 3, "Bias" = 2),
+           model_names = c(" ","SIGACTS", rep(c("ICEWS","GED"),2)),
+           caption     = "SPDE Model Results")
+```
+\end{landscape}
+
+```{r image, echo = FALSE, fig.cap = "SIGACTS GMRF Mean", fig.align= "center", results = "asis", fig.show='hold', out.width = "9in", fig.pos = "H",out.extra='angle=90', eval = FALSE}
+knitr::include_graphics("../../Results/Figures/figure-field-sigacts.png")
+```
+
+\begin{landscape}
+\begin{figure}
+  \centering
+  \includegraphics[width=9in,height=6.5in]{"../../Results/Figures/figure-field-sigacts.png"}
+  \caption{SIGACTS GMRF Mean}
+\end{figure}
+\end{landscape}
+
+
+\begin{landscape}
+\begin{figure}
+  \centering
+  \includegraphics[width=9in,height=6.5in]{"../../Results/Figures/figure-field-icews.png"}
+  \caption{ICEWS GMRF Mean}
+\end{figure}
+\end{landscape}
+
+
+\begin{landscape}
+\begin{figure}
+  \centering
+  \includegraphics[width=9in,height=6.5in]{"../../Results/Figures/figure-field-ged.png"}
+  \caption{GED GMRF Mean}
+\end{figure}
+\end{landscape}
