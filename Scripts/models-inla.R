@@ -90,7 +90,9 @@ inla_fit <- function(dv, bias = FALSE){
 #-----------------------------------------------------------------------------#
 # DATA                                                                    ----
 #-----------------------------------------------------------------------------#
+# ----------------------------------- #
 # To facilitate easily switching between half-year or monthly, set here.
+# ----------------------------------- #
 dat <- irq_halfyr %>%
   rename(
     sigacts   = p_s1_d,
@@ -101,36 +103,6 @@ dat <- irq_halfyr %>%
     ged_l     = p_ged_d_lag
   )
 rm(irq_halfyr, irq_month, sp_wts)
-
-# ----------------------------------- #
-# Create a Baghdad dummy
-# ----------------------------------- #
-baghdad <- st_sfc(st_point(c(44.3661, 33.3152)),
-                  crs = st_crs("+proj=longlat")) %>%
-  st_transform(., crs = st_crs(irq))
-bdb <- st_buffer(x = baghdad, dist = 5e4)
-
-irqc   <- st_centroid(irq)
-irqcwi <- st_within(irqc, bdb, sparse = F)
-
-irqc$test <- ifelse(as.vector(irqcwi), "WITHIN","NOT")
-# irqc
-
-# ggplot() +
-#   geom_sf(data = irq) +
-#   geom_sf(data = bdb, fill = "green") +
-#   geom_sf(data = baghdad, color = "red") +
-#   geom_sf(data = irqc, aes(color = test))
-
-baghdad_100k <- irqc[which(irqc$test == "WITHIN"),][["district_name"]]
-
-dat <- dat %>%
-  mutate(baghdad = case_when(district_name %in% baghdad_100k ~ "Baghdad",
-                             TRUE ~ "Not_Baghdad")) %>%
-  mutate(baghdad = as_factor(baghdad)) %>%
-  mutate(baghdad = fct_relevel(baghdad, "Not_Baghdad", after = Inf))
-
-rm(baghdad, bdb, irqc, irqcwi, baghdad_100k)
 # ----------------------------------- #
 
 
@@ -348,7 +320,10 @@ data_stack <- inla.stack(
 # Temporal prior
 # ----------------------------------- #
 # PC temporal autoregressive prior [considers P(cor>0) = 0.9]
-h.spec <- list(theta = list(prior = 'pccor1', param = c(0, 0.9)))
+# h.spec <- list(theta = list(prior = 'pccor1', param = c(0, 0.9)))
+
+# PC temporal prior on random walk:
+h.spec <- list(theta = list(prior = "pc.prec", param = c(1, 0.01)))
 # ----------------------------------- #
 
 # ----------------------------------- #
@@ -371,7 +346,8 @@ f <- . ~ - 1 + Intercept + p_spentcptotal_d + p_spentruzicka_d +
   f(i,
     model         = spde,
     group         = i.group,
-    control.group = list(model = 'ar1', hyper = h.spec))
+    control.group = list(model = "rw1", hyper = h.spec))
+# change model to "ar1" for autoregressive
 #-----------------------------------------------------------------------------#
 
 

@@ -52,13 +52,13 @@ inla_params <- function(model_list, spde){
     Kappa <- inla.qmarginal(0.50, spde_pars$marginals.kappa[[1]])
     Sigma <- inla.qmarginal(0.50, spde_pars$marginals.variance.nominal[[1]])
     Range <- inla.qmarginal(0.50, spde_pars$marginals.range.nominal[[1]])
-    Rho   <- inla.qmarginal(0.50, mod$marginals.hyperpar$`GroupRho for i`)
+    # Rho   <- inla.qmarginal(0.50, mod$marginals.hyperpar$`GroupRho for i`)
 
     # Compute 95% HPD intervals
     Kappahpd <- inla.hpdmarginal(0.95, spde_pars$marginals.kappa[[1]])
     Sigmahpd <- inla.hpdmarginal(0.95, spde_pars$marginals.variance.nominal[[1]])
     Rangehpd <- inla.hpdmarginal(0.95, spde_pars$marginals.range.nominal[[1]])
-    Rhohpd   <- inla.hpdmarginal(0.95, mod$marginals.hyperpar$`GroupRho for i`)
+    # Rhohpd   <- inla.hpdmarginal(0.95, mod$marginals.hyperpar$`GroupRho for i`)
 
     # Convert range to km (degrees = 2*pi*6371/360)
     Range    <- Range * 2*pi*6371/360
@@ -67,11 +67,12 @@ inla_params <- function(model_list, spde){
     # Collect hyper-parameters
     hyper <- rbind(c(Kappa,  Kappahpd),
                    c(Sigma,  Sigmahpd),
-                   c(Range,  Rangehpd),
-                   c(Rho,    Rhohpd)) %>%
+                   c(Range,  Rangehpd)
+                   # c(Rho,    Rhohpd)
+                   ) %>%
       as.data.frame() %>%
       rename(median = 1, lb = 2, ub = 3) %>%
-      mutate(variable = c("Kappa","Sigma","Range","Rho"),
+      mutate(variable = c("Kappa","Sigma^2","Range"),
              type     = "hyper")
     # ----------------------------------- #
 

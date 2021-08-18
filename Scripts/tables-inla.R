@@ -66,7 +66,7 @@ var_names <- c(
   "sigacts2"                  = "SIGACTS",
   "p_spentcptotal_d"          = "Condolence Spending (PC)",
   "p_spentruzicka_d"          = "Ruzicka Spending (PC)",
-  "coalitioncc_d"             = "Coalation Collateral Damage",
+  "coalitioncc_d"             = "Coalition Collateral Damage",
   "insurgentcc_d"             = "Insurgent Collateral Damage",
   "p_spentcerpsmall_noncp_d"  = "Other Small CERP Spending",
   "p_spentusaid_nonruzicka_d" = "Other USAID Spending",
