@@ -1,0 +1,186 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+%
+\documentclass[
+  12pt,
+]{article}
+\usepackage{lmodern}
+\usepackage{amsmath}
+\usepackage{ifxetex,ifluatex}
+\ifnum 0\ifxetex 1\fi\ifluatex 1\fi=0 % if pdftex
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+  \usepackage{amssymb}
+\else % if luatex or xetex
+  \usepackage{unicode-math}
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{xcolor}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\IfFileExists{bookmark.sty}{\usepackage{bookmark}}{\usepackage{hyperref}}
+\hypersetup{
+  pdftitle={SPDE-Temporal Models},
+  hidelinks,
+  pdfcreator={LaTeX via pandoc}}
+\urlstyle{same} % disable monospaced font for URLs
+\usepackage[margin=1in]{geometry}
+\usepackage{longtable,booktabs}
+\usepackage{calc} % for calculating minipage widths
+% Correct order of tables after \paragraph or \subparagraph
+\usepackage{etoolbox}
+\makeatletter
+\patchcmd\longtable{\par}{\if@noskipsec\mbox{}\fi\par}{}{}
+\makeatother
+% Allow footnotes in longtable head/foot
+\IfFileExists{footnotehyper.sty}{\usepackage{footnotehyper}}{\usepackage{footnote}}
+\makesavenoteenv{longtable}
+\usepackage{graphicx}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+% Set default figure placement to htbp
+\makeatletter
+\def\fps@figure{htbp}
+\makeatother
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+\usepackage{lscape}
+\ifluatex
+  \usepackage{selnolig}  % disable illegal ligatures
+\fi
+\usepackage[]{natbib}
+\bibliographystyle{plainnat}
+
+\title{SPDE-Temporal Models}
+\author{}
+\date{\vspace{-2.5em}8/17/2021}
+
+\begin{document}
+\maketitle
+
+\hypertarget{priors}{%
+\subsubsection{Priors}\label{priors}}
+
+Mesh - the mesh used here contains 126 nodes (constrained to limit computation times). The mesh isn't really a prior since it only really impacts estimate precision.
+
+For the SPDE I employed penalized complexity priors on a Matern Model where I assign a 10\% probability that:
+
+\begin{itemize}
+\tightlist
+\item
+  the range is above 3.6 (approximately 332 km at Iraq's latitude) \((3.6,\ 0.1)\)
+\item
+  the standard deviation is above 1 \((1,\ 0.1)\)
+\end{itemize}
+
+The range prior accounts for the majority of violence occurring within Baghdad during this time period and thus the scale of the spatial process implied by the sample of data analyzed here. Baghdad's average distance from its nearest international border is approximately 332 km which, at Iraq's latitude, corresponds to 3.6 decimal degrees. This prior therefore assigns a small probability that the spatial effects implied by the GRMF extends beyond this range.
+
+On the GMRF random walk I follow Python and the recommendations of R-INLA and employ a penalized complexity prior for the variance of the temporal structure \((\sigma_{rw}^2)\) with probability that variance exceeds 1 is 1\%.
+
+Finally, for the fixed effects (independent regressors) I used R-INLA defaults priors of i.i.d. normal distributions of mean 0 and precision 0.001.
+
+\hypertarget{models}{%
+\subsubsection{Models}\label{models}}
+
+In the table below Columns 1 and 2 replicate Silverman's IO model from Column 4 in Table 2 on page 866. The first column is an exact replication (for consistency I present confidence intervals for all models rather than any standard errors) and thus uses the same setup as the IO article: drop Baghdad (Karkh district) and use population based analytic weights. The second column preserves these choices but drops the first year of observations associated with the DV-lag used in a few subsequent models.
+
+Columns 3 and 4 present the spatio-temporal lag model estimates with the structural from estimates presented in column 3 and the long-run-steady-state equilibrium estimates presented in table 4. These correspond to eq. 2 in the most current version of the paper.
+
+Finally, I present two SPDE models in column 5 and 6 with the model in column 5 retaining the DV temporal lag on the DV used in the STAR model and the model in column 6 dropping the temporal lag on the DV. Relative to Silverman's published model from the first column, neither of the spending variables retain reliably non-zero parameter estimates in the GRMF model when the temporal lag on the DV is not included.
+
+\hypertarget{ruzicka-spending}{%
+\subsubsection{Ruzicka spending}\label{ruzicka-spending}}
+
+The Ruzicka spending variable exhibits a great deal of instability which I attribute to the lack of variance for this measure: 84\% of the observations in the half-year sample used here are zero.
+
+\begin{landscape}
+
+\begin{table}
+\begin{center}
+\begin{footnotesize}
+\begin{tabular}{l c c c c c}
+\toprule
+ & \multicolumn{2}{c}{Replication} & \multicolumn{1}{c}{STAR} & \multicolumn{2}{c}{SPDE} \\
+\cmidrule(lr){2-3} \cmidrule(lr){4-4} \cmidrule(lr){5-6}
+ & Published & Case Subset & STAR-Structural & SPDE-DV Lag & SPDE-No DV Lag \\
+\midrule
+Condolence Spending (PC)    & $-0.52^{*}$       & $-0.53^{*}$       & $-0.61^{*}$       & $-0.31^{*}$         & $-0.28$             \\
+                            & $ [-0.88; -0.15]$ & $ [-1.00; -0.05]$ & $ [-0.98; -0.25]$ & $ [ -0.61;  -0.02]$ & $ [ -0.58;   0.02]$ \\
+Ruzicka Spending (PC)       & $-0.98^{*}$       & $-1.28^{*}$       & $-0.22$           & $-0.26$             & $-0.25$             \\
+                            & $ [-1.92; -0.04]$ & $ [-2.08; -0.48]$ & $ [-2.21;  1.76]$ & $ [ -1.86;   1.33]$ & $ [ -1.84;   1.35]$ \\
+Coalition Collateral Damage & $0.03^{*}$        & $0.03^{*}$        & $0.05^{*}$        & $0.02^{*}$          & $0.02^{*}$          \\
+                            & $ [ 0.01;  0.04]$ & $ [ 0.01;  0.04]$ & $ [ 0.03;  0.07]$ & $ [  0.01;   0.04]$ & $ [  0.01;   0.04]$ \\
+Insurgent Collateral Damage & $0.00$            & $-0.00$           & $-0.00$           & $-0.01$             & $-0.01$             \\
+                            & $ [-0.02;  0.02]$ & $ [-0.02;  0.02]$ & $ [-0.02;  0.02]$ & $ [ -0.03;   0.01]$ & $ [ -0.02;   0.01]$ \\
+Other Small CERP Spending   & $-0.18$           & $-0.18$           & $0.26^{*}$        & $0.13$              & $0.14$              \\
+                            & $ [-0.67;  0.31]$ & $ [-0.71;  0.35]$ & $ [ 0.04;  0.47]$ & $ [ -0.06;   0.32]$ & $ [ -0.04;   0.33]$ \\
+Other USAID Spending        & $-0.00$           & $-0.27$           & $-0.96^{*}$       & $-0.48$             & $-0.46$             \\
+                            & $ [-0.01;  0.00]$ & $ [-0.77;  0.22]$ & $ [-1.63; -0.29]$ & $ [ -1.04;   0.09]$ & $ [ -1.03;   0.10]$ \\
+Coalition Troop Strenght    & $0.05$            & $0.05$            & $0.05$            & $0.04$              & $0.06$              \\
+                            & $ [-0.01;  0.12]$ & $ [-0.03;  0.14]$ & $ [-0.11;  0.20]$ & $ [ -0.08;   0.17]$ & $ [ -0.06;   0.18]$ \\
+CMOC Presence               & $-0.30$           & $-0.33$           & $0.00$            & $0.01$              & $0.00$              \\
+                            & $ [-0.96;  0.36]$ & $ [-1.13;  0.47]$ & $ [-0.19;  0.19]$ & $ [ -0.16;   0.17]$ & $ [ -0.16;   0.17]$ \\
+PRT Presence                & $0.01$            & $0.01$            & $-0.08$           & $-0.04$             & $-0.04$             \\
+                            & $ [-0.19;  0.21]$ & $ [-0.23;  0.25]$ & $ [-0.30;  0.14]$ & $ [ -0.24;   0.17]$ & $ [ -0.24;   0.17]$ \\
+Phi                         &                   &                   & $0.17^{*}$        & $0.08^{*}$          &                     \\
+                            &                   &                   & $ [ 0.10;  0.23]$ & $ [  0.02;   0.13]$ &                     \\
+Rho                         &                   &                   & $0.36^{*}$        &                     &                     \\
+                            &                   &                   & $ [ 0.28;  0.45]$ &                     &                     \\
+Kappa                       &                   &                   &                   & $1.52^{*}$          & $1.57^{*}$          \\
+                            &                   &                   &                   & $ [  1.06;   2.04]$ & $ [  1.11;   2.13]$ \\
+Sigma$^2$                   &                   &                   &                   & $0.65^{*}$          & $0.61^{*}$          \\
+                            &                   &                   &                   & $ [  0.40;   0.95]$ & $ [  0.38;   0.87]$ \\
+Range                       &                   &                   &                   & $207.09^{*}$        & $199.86^{*}$        \\
+                            &                   &                   &                   & $ [146.23; 280.37]$ & $ [139.93; 268.10]$ \\
+\midrule
+FE: District                & Yes               & Yes               & No                & No                  & No                  \\
+FE: Time                    & Yes               & Yes               & No                & No                  & No                  \\
+FE: Sunni VS                & Yes               & Yes               & No                & No                  & No                  \\
+n                           & $927$             & $824$             & $824$             & $824$               & $824$               \\
+LogLik                      & $-1109.50$        & $-1011.66$        & $-1166.25$        & $-890.19$           & $-887.17$           \\
+AIC                         & $2477.00$         & $2277.32$         & $2356.50$         & $2314.57$           & $2298.96$           \\
+BIC                         & $3100.32$         & $2876.02$         & $2413.07$         & $3573.70$           & $3535.53$           \\
+\bottomrule
+\multicolumn{6}{l}{\tiny{$^*$ Null hypothesis value outside the confidence interval.}}
+\end{tabular}
+\end{footnotesize}
+\caption{Statistical models}
+\label{table:coefficients}
+\end{center}
+\end{table}
+\end{landscape}
+
+\hypertarget{gaussian-markov-random-fields}{%
+\subsubsection{Gaussian Markov Random Fields}\label{gaussian-markov-random-fields}}
+
+\begin{figure}
+\includegraphics[width=27.08in]{../../Results/Figures/figure-field-sigacts-rw} \caption{Random Walk GMRF - Fields}\label{fig:unnamed-chunk-2}
+\end{figure}
+
+\end{document}

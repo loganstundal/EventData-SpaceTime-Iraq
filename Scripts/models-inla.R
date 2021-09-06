@@ -212,6 +212,16 @@ mesh <- inla.mesh.2d(loc      = cords,
 # # ~ 3.56 decimal degrees # Unprojected
 # ----------------------------------- #
 
+st_centroid(irq0)
+prj <- "+proj=aea +lat_1=29.5 +lat_2=45.5 +datum=NAD83 +units=m +no_defs"
+
+x   <- irq1$district_name
+res <- lapply(x, function(id){
+  tmp <- irq1 %>% filter(district_name == id) %>% select(district_name)
+  cnt <- st_centroid(tmp)
+
+})
+
 
 # ----------------------------------- #
 # Create spde model object with penalized complexity priors

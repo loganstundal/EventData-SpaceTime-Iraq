@@ -16,6 +16,7 @@ output:
     number_sections: false
 header-includes:
 - \usepackage{lscape}
+fontsize: 12pt
 ---
 
 ```{r setup, include=FALSE}
@@ -44,7 +45,7 @@ dat <- irq_halfyr %>%
 rm(irq_halfyr, irq_month, sp_wts, irq)
 ```
 
-
+<!-- NEED: prior information!!! -->
 
 # Document overview:
 
@@ -52,7 +53,7 @@ This memo provides the following: A table of model estimates, a coefficient plot
 
 There are two types of models here: "Conflict" and "Bias". The conflict models replicate the final model that Silverman presented in Table 2 of his paper but omit unit, time, and Sunni-vote-share fixed effects. Instead these models include a temporal lag of the dependent variable on the right hand side (I call `Phi`) as well as a spatio-temporal GMRF - the temporal dependence between fields over time is captured by the parameter `Rho` in the hyperparameter section of the Table and Coefficient Plot (Figure 1)
 
-The "Bias" models are almost identical to the conflict models with two differences. I remove the temporal lag on the dependent variable and add the contemporaneous measure of SIGACTS to the right-hand-side. My intuition here was that, after controlling for ground-truth, none of the remaining control variables should have been reliable predictors of ICEWS or GED events. I also though the parameters on SIGACTS would be indicative of overreporting ($\beta_{SIGACTS}>1$) or underreporting ($\beta_{SIGACTS}<1$). So, I was really surprised to discover that ground-truth provides no predictive power to explain variation in reported ICEWS or GED events. 
+The "Bias" models are almost identical to the conflict models with two differences. I remove the temporal lag on the dependent variable and add the contemporaneous measure of SIGACTS to the right-hand-side. My intuition here was that, after controlling for ground-truth, none of the remaining control variables should have been reliable predictors of ICEWS or GED events. I also though the parameters on SIGACTS would be indicative of overreporting ($\beta_{SIGACTS}>1$) or underreporting ($\beta_{SIGACTS}<1$). So, I was really surprised to discover that ground-truth provides no predictive power to explain variation in reported ICEWS or GED events. This remains the case even when I exclude all the controls and seems to indicate that ICEWS and GED have a different underlying data generating process or are capturing different events (or simply missing too many events) relative to SIGACTS. Since all three measures have similar overall distributions (variable summary statistics in nearby table) this also may indicate they are locating events in different Iraqi districts.
 
 ```{r, results='asis', eval = FALSE}
 library(texreg)
@@ -61,8 +62,6 @@ m2 <- lm(GED   ~ SIGACTS, data = dat)
 
 knitreg(list(m1,m2))
 ```
-
-This seems to indicate that ICEWS and GED have a different underlying data generating process or are capturing different events (or simply missing too many events) relative to SIGACTS. Looking at Silverman's Condolence Spending Variable ICEWS suggests the opposite conclusion relative to the SIGACTS model: that condolence spending reliably leads to more violence while GED suggests that condolence spending has no effect on violence. This difference is also illustrated by the dynamics implied by the temporal lags on the dependent variables (`Phi`) point to different processes for ICEWS and GED relative to SIGACTS. SIGACTS is clearly positive while ICWES and GED are both clearly negative. 
 
 ```{r}
 # skim(dat) %>% 
@@ -102,6 +101,8 @@ d %>%
 ## Conflict models
 
 Overall, there is a lot of noise in these models. The credibility intervals on parameters for many of the included variables are wide and span zero. Silverman's main variable of interest - `Condolence Spending per capita` - has an almost identical estimate here. In Silverman's model (95% CI based on his reported standard errors): -0.52 [-0.89, -0.15] and in the spatio-temporal SPDE model without Silverman's Fixed Effects but with a first-order lag on the DV added to the right-hand side: -0.46 [-0.84, -0.09].
+
+Looking at the ICEWS and GED models paint a different picture for Condolence Spending. ICEWS suggests the opposite conclusion relative to the SIGACTS model: that condolence spending reliably leads to more violence while GED suggests that condolence spending has no effect on violence. The difference in these measures of violent events also extends to the dynamics implied by the temporal lags on the dependent variables (`Phi`) illustrating different underlying processes for ICEWS and GED relative to SIGACTS. SIGACTS exhibits clear positive temporal autocorrelation while ICWES and GED are both negative. 
 
 
 ## INLA GMRF Prediction

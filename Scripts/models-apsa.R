@@ -38,6 +38,7 @@ library(ggplot2)
 library(sandwich)
 library(texreg)
 library(spatialreg)
+library(scales)
 #---------------------------#
 
 #---------------------------#
@@ -116,6 +117,21 @@ tidy_mod <- function(model, prec = 2){
 
   return(res)
 }
+
+map_theme <-   theme(
+  panel.background = element_rect(fill  = "transparent",
+                                  color = "black",
+                                  size  = 0.1),
+  panel.grid       = element_blank(),
+  axis.text        = element_blank(),
+  axis.ticks       = element_blank(),
+  axis.title       = element_blank(),
+  legend.position  = "bottom",
+  legend.direction = "horizontal",
+  legend.title     = element_blank(),
+  strip.background = element_rect(fill  = "gray80",
+                                  color = "black",
+                                  size  = 0.1))
 #---------------------------#
 #-----------------------------------------------------------------------------#
 
@@ -669,83 +685,229 @@ mod_tex[["m4_2_spde"]] <- createTexreg(
 
 # The inclusion or exclusion of the dynamic lag has no meaningful difference
 # in regard to GRMF values.
-# m4_1_field <- inla_fields(model = mod_list$m4_1_spde,
-#                           mesh  = mesh,
-#                           index = iset,
-#                           time_periods = time_periods,
-#                           boundary = irq0)
-
-m4_2_field <- inla_fields(model = mod_list$m4_2_spde,
+m4_1_field <- inla_fields(model = mod_list$m4_1_spde,
                           mesh  = mesh,
                           index = iset,
                           time_periods = time_periods,
                           boundary = irq0)
 
-# plt_dat <- bind_rows(
-#   m4_2_field$mean %>% mutate(grp = "Mean"),
-#   m4_2_field$sd   %>% mutate(grp = "Sigma"),
-# )
+# m4_2_field <- inla_fields(model = mod_list$m4_2_spde,
+#                           mesh  = mesh,
+#                           index = iset,
+#                           time_periods = time_periods,
+#                           boundary = irq0)
 
-# summary(plt_dat$val)
-
-
-rw_mean <- ggplot(data = m4_2_field$mean) +
+rw_1_mean <- ggplot(data = m4_1_field$mean) +
   geom_raster(aes(x = x, y = y, fill = val)) +
-  geom_sf(data = irq0, fill = "transparent", color = "black", size = 0.1) +
-  scale_fill_gradient2(low      = muted("green"),
+  geom_sf(data = irq1, fill = "transparent", color = "gray40", size = 0.1) +
+  geom_sf(data = irq0, fill = "transparent", color = "black",  size = 0.4) +
+  scale_fill_gradient2(low      = muted("blue"),
                        high     = muted("red"),
                        mid      = "white",
                        midpoint = 0,
-                       limits   = NULL) +
-  labs(subtitle = "Mean") +
-  theme(
-    panel.background = element_rect(fill  = "transparent",
-                                    color = "black",
-                                    size  = 0.1),
-    panel.grid       = element_blank(),
-    axis.text        = element_blank(),
-    axis.ticks       = element_blank(),
-    axis.title       = element_blank(),
-    legend.position  = "bottom",
-    legend.direction = "horizontal",
-    legend.title     = element_blank(),
-    strip.background = element_rect(fill  = "gray80",
-                                    color = "black",
-                                    size  = 0.1))
+                       limits   = c(-0.2, 0.85)) +
+  # labs(title = expression(paste("GMRF, ", zeta))) +
+  map_theme +
+  theme(legend.text     = element_text(size = 16/.pt),
+        legend.key.size = unit(5, "mm"))
 
-m4_2_field$sd$val_ln <- log(m4_2_field$sd$val)
+windows(height = 6.5, width = 6.5);rw_1_mean
+dev.off()
 
-rw_sigma <- ggplot(data = m4_2_field$sd) +
-  geom_raster(aes(x = x, y = y, fill = val_ln)) +
-  geom_sf(data = irq0, fill = "transparent", color = "black", size = 0.1) +
-  scale_fill_gradient2(low      = muted("green"),
-                       high     = muted("red"),
-                       mid      = "white",
-                       midpoint = median(m4_2_field$sd$val_ln),
-                       limits   = NULL) +
-  labs(subtitle = "Sigma, logged") +
-  theme(
-    panel.background = element_rect(fill  = "transparent",
-                                    color = "black",
-                                    size  = 0.1),
-    panel.grid       = element_blank(),
-    axis.text        = element_blank(),
-    axis.ticks       = element_blank(),
-    axis.title       = element_blank(),
-    legend.position  = "bottom",
-    legend.direction = "horizontal",
-    legend.title     = element_blank(),
-    strip.background = element_rect(fill  = "gray80",
-                                    color = "black",
-                                    size  = 0.1))
-
-rw_field <- cowplot::plot_grid(rw_mean, rw_sigma, align = "hv", axis = "l",
-                               ncol = 2)
-ggsave(plot     = rw_field,
-       filename = "Results/Figures/figure-field-sigacts-rw.png",
-       width    = 6.5,
-       height   = 4.0,
+ggsave(plot     = rw_1_mean,
+       filename = "Results/Figures/figure-gmrf_mean.png",
+       width    = 5.5,
+       height   = 5.0,
        units    = "in")
+
+file.copy(
+  from = "Results/Figures/figure-gmrf_mean.png",
+  to   = "Drafts/Drafts/GAST20210906/figure-gmrf_mean.png",
+  overwrite = TRUE
+)
+
+# m4_1_field$sd$val_ln <- log(m4_1_field$sd$val)
+# rw_1_sigma <- ggplot(data = m4_1_field$sd) +
+#   geom_raster(aes(x = x, y = y, fill = val_ln)) +
+#   geom_sf(data = irq0, fill = "transparent", color = "black", size = 0.1) +
+#   scale_fill_gradient2(low      = muted("blue"),
+#                        high     = muted("red"),
+#                        mid      = "white",
+#                        midpoint = median(m4_1_field$sd$val_ln),
+#                        limits   = NULL) +
+#   labs(subtitle = "Sigma (logged)") +
+#   map_theme
+
+# rw_2_mean <- ggplot(data = m4_2_field$mean) +
+#   geom_raster(aes(x = x, y = y, fill = val)) +
+#   geom_sf(data = irq0, fill = "transparent", color = "black", size = 0.1) +
+#   scale_fill_gradient2(low      = muted("blue"),
+#                        high     = muted("red"),
+#                        mid      = "white",
+#                        midpoint = 0,
+#                        limits   = NULL) +
+#   labs(subtitle = "Mean") +
+#   map_theme
+#
+# m4_2_field$sd$val_ln <- log(m4_2_field$sd$val)
+#
+# rw_2_sigma <- ggplot(data = m4_2_field$sd) +
+#   geom_raster(aes(x = x, y = y, fill = val_ln)) +
+#   geom_sf(data = irq0, fill = "transparent", color = "black", size = 0.1) +
+#   scale_fill_gradient2(low      = muted("green"),
+#                        high     = muted("red"),
+#                        mid      = "white",
+#                        midpoint = median(m4_2_field$sd$val_ln),
+#                        limits   = NULL) +
+#   labs(subtitle = "Sigma, logged") +
+#   map_theme
+
+# rw_field <- cowplot::plot_grid(rw_mean, rw_sigma, align = "hv", axis = "l",
+#                                ncol = 2)
+# ggsave(plot     = rw_field,
+#        filename = "Results/Figures/figure-field-sigacts-rw.png",
+#        width    = 6.5,
+#        height   = 4.0,
+#        units    = "in")
+#-----------------------------------------------------------------------------#
+
+
+
+#-----------------------------------------------------------------------------#
+# GMRF RANGE ESTIMATES                                                    ----
+#-----------------------------------------------------------------------------#
+matern <- function(lambda, kappa, dist){
+  # Matern covariance function, used with matern_data()
+  2^(1-lambda)/gamma(lambda) * (kappa*dist)^lambda* besselK(x=dist*kappa, nu=lambda)
+}
+
+
+matern_data <- function(model,
+                        max_distance = NULL){
+  # ----------------------------------- #
+  # function description
+  # ----------------------------------- #
+  # matern_data takes an inla model where random effects estimated in a gaussian field are assumed
+  # to follow a continuous decay process fit with a stochastic partial differential equation with a
+  # matern covariance solution. This function extract model parameters to construct decay estimates
+  # up to a max_distance argument (km) set by the user.
+  # ----------------------------------- #
+
+
+  # ----------------------------------- #
+  # Extract spatial field and parameters from model input
+  # ----------------------------------- #
+  # Spatial parameters with nominal scale (time is aggregated if present)
+  spde.resfinal <- inla.spde2.result(inla = model,
+                                     name = "i",
+                                     spde,do.transform = TRUE) # do.transform put in correct scale
+
+  # Kappa / computed using Blangiardo & Cameletti (2015)
+  Kappa    <-inla.emarginal(function(x) x, spde.resfinal$marginals.kappa[[1]]) # kappa (mean)
+  Kappahpd <-inla.hpdmarginal(0.95, spde.resfinal$marginals.kappa[[1]])        # kappa (hpd 95%)
+
+  # Variance of the random field
+  variance    <- inla.emarginal(function(x) x, spde.resfinal$marginals.variance.nominal[[1]]) # variance (mean)
+  variancehpd <- inla.hpdmarginal(0.95, spde.resfinal$marginals.variance.nominal[[1]])        # variance (hpd 95%)
+
+  # Range + degree conversion
+  range    <- inla.emarginal(function(x) x, spde.resfinal$marginals.range.nominal[[1]]) # range (mean)
+  rangehpd <- inla.hpdmarginal(0.95, spde.resfinal$marginals.range.nominal[[1]])        # range (hpd 95%)
+  deg      <- 2*pi*6371/360
+  # ----------------------------------- #
+
+
+  # ----------------------------------- #
+  # Build plot data frame
+  # ----------------------------------- #
+  # Additional parameters:
+  lambda <- 1
+
+  if(is.null(max_distance)){
+    dist.x <- seq(from = 0.01, to = rangehpd[,"high"], length.out = 100)
+  } else{
+    # Convert user-input kilometers "max_distance" to decimal degrees for
+    # appropriate mapping to estimation space.
+    max_distance <- max_distance / deg
+
+    dist.x <- seq(from = 0.01, to = max_distance, length.out = 100)
+  }
+
+  plt_dat <- data.frame(
+    "x"  = dist.x,
+    "lb" = matern(lambda = lambda,
+                  kappa  = Kappahpd[,"low"],
+                  dist   = dist.x),
+    "y"  = matern(lambda = lambda,
+                  kappa  = Kappa,
+                  dist   = dist.x),
+    "ub" = matern(lambda = lambda,
+                  kappa  = Kappahpd[,"high"],
+                  dist   = dist.x))
+  # ----------------------------------- #
+
+
+  # ----------------------------------- #
+  # Return statement
+  # ----------------------------------- #
+  res <- list("df"    = plt_dat,
+              "range" = range)
+
+  return(res)
+  # ----------------------------------- #
+}
+
+range_est <- matern_data(model = mod_list$m4_1_spde, max_distance = 300)
+
+# Breaks: 0 - 500km (converted to decimal degrees)
+breaks <- c(0, 50, 100, 200, 300) / (2*pi*6371/360)
+breaks <- sort(c(breaks, range_est$range))
+labs   <- (breaks * (2*pi*6371/360)) %>% round(., 0)
+
+rw_1_range <- ggplot(data = range_est$df, aes(x=x)) +
+  geom_ribbon(aes(ymin = lb, ymax = ub), fill = "gray50", alpha = 0.2) +
+  geom_line(aes(y = y),  color = "black", size = 0.25) +
+
+  geom_vline(aes(xintercept = range_est$range), linetype = "dashed", size = 0.2, color = "gray50") +
+  geom_hline(aes(yintercept = 0.05),   linetype = "dashed", size = 0.2, color = "gray50") +
+
+  scale_x_continuous(name   = "Distance [km]",
+                     limits = c(0,max(breaks)),
+                     breaks = breaks,
+                     labels = labs,
+                     expand = c(0,0)) +
+
+  scale_y_continuous(name   = "Matern covariance function",
+                     limits = c(0,1),
+                     breaks = c(seq(0, 1, 0.25), 0.1)) +
+
+  theme(legend.position  = "bottom",
+        legend.direction = "horizontal",
+        legend.title     = element_blank(),
+        panel.grid       = element_blank(),
+        axis.text        = element_text(size = 20/.pt),
+        panel.background = element_rect(fill = NA, color = "black", size = 0.1),
+        strip.background = element_rect(fill = "gray95", color = "black", size = 0.1),
+        plot.margin      = unit(c(1,3,1,1), "mm"))
+  # labs(title    = "Spatial correlation decay",
+  #      subtitle = "SPDE - Insurgent Events")
+
+
+windows(height = 3.5, width = 6.5);rw_1_range
+dev.off(2)
+
+ggsave(plot     = rw_1_range,
+       filename = "Results/Figures/figure-spde_range.png",
+       width    = 6.5,
+       height   = 3.5,
+       units    = "in")
+
+file.copy(
+  from = "Results/Figures/figure-spde_range.png",
+  to   = "Drafts/Drafts/GAST20210906/figure-spde_range.png",
+  overwrite = TRUE
+)
+
 #-----------------------------------------------------------------------------#
 
 
