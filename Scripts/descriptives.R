@@ -33,6 +33,8 @@ library(tidyverse)
 library(sf)
 library(kableExtra)
 library(skimr)
+library(biscale)
+library(cowplot)
 #---------------------------#
 
 #---------------------------#
@@ -137,8 +139,7 @@ quantile(res_km, probs = c(0.025, 0.5, 0.975))
 # Tidy half-year id for plot:
 # ----------------------------------- #
 irq_halfyr <- irq_halfyr %>%
-  mutate(time_id = case_when(str_detect(time_id, "h1") ~ str_replace(time_id, "h1",".H1"),
-                             TRUE ~ str_replace(time_id, "h2", ".H2")))
+  mutate(time_id = str_replace(time_id, "h", " - Half "))
 # ----------------------------------- #
 
 
@@ -300,7 +301,7 @@ chk <- lapply(ids, function(id){
            cut_iv = case_when(iv <= 0 ~ "1",
                               iv >  0 & iv < vals_iv$iqr ~ "2",
                               iv >= vals_iv$iqr ~ "3")) %>%
-    mutate(bi_class = paste(cut_dv, cut_iv, sep = "-"),
+    mutate(bi_class = paste(cut_iv, cut_dv, sep = "-"),
            time_id  = id)
 
   return(tmp)
@@ -351,10 +352,9 @@ ggsave(plot     = final,
 
 file.copy(
   from = "Results/Figures/figure-bimap.png",
-  to   = "Drafts/Drafts/GAST20210906/figure-bimap.png",
+  to   = "Drafts/Drafts/GAST20210913/figure-bimap.png",
   overwrite = TRUE
 )
-
 #-----------------------------------------------------------------------------#
 
 
