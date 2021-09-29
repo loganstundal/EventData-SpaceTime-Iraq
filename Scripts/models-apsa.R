@@ -683,13 +683,21 @@ mod_tex[["m4_2_spde"]] <- createTexreg(
 # INLA Model Fields
 #-----------------------------------------------------------------------------#
 
+# 9/12/2021
+# NOTE NOTE NOTE --- THIS CODE IS BAD -- INLA.FIELDS() GRABBED INCORRECT VALS
+# USE CORRECTED VERSION IN "figures-inla-fields_apsa_rw_corrected.R
+
+# They corrected script and function produce the same rows - so the ggplot
+# is wrong due to a missing facet. BUT -- the summary() result of the field
+# value across all years differs!!! Why???
+
 # The inclusion or exclusion of the dynamic lag has no meaningful difference
 # in regard to GRMF values.
-m4_1_field <- inla_fields(model = mod_list$m4_1_spde,
-                          mesh  = mesh,
-                          index = iset,
-                          time_periods = time_periods,
-                          boundary = irq0)
+# m4_1_field <- inla_fields(model = mod_list$m4_1_spde,
+#                           mesh  = mesh,
+#                           index = iset,
+#                           time_periods = time_periods,
+#                           boundary = irq0)
 
 # m4_2_field <- inla_fields(model = mod_list$m4_2_spde,
 #                           mesh  = mesh,
@@ -697,34 +705,34 @@ m4_1_field <- inla_fields(model = mod_list$m4_1_spde,
 #                           time_periods = time_periods,
 #                           boundary = irq0)
 
-rw_1_mean <- ggplot(data = m4_1_field$mean) +
-  geom_raster(aes(x = x, y = y, fill = val)) +
-  geom_sf(data = irq1, fill = "transparent", color = "gray40", size = 0.1) +
-  geom_sf(data = irq0, fill = "transparent", color = "black",  size = 0.4) +
-  scale_fill_gradient2(low      = muted("blue"),
-                       high     = muted("red"),
-                       mid      = "white",
-                       midpoint = 0,
-                       limits   = c(-0.2, 0.85)) +
-  # labs(title = expression(paste("GMRF, ", zeta))) +
-  map_theme +
-  theme(legend.text     = element_text(size = 16/.pt),
-        legend.key.size = unit(5, "mm"))
+# rw_1_mean <- ggplot(data = m4_1_field$mean) +
+#   geom_raster(aes(x = x, y = y, fill = val)) +
+#   geom_sf(data = irq1, fill = "transparent", color = "gray40", size = 0.1) +
+#   geom_sf(data = irq0, fill = "transparent", color = "black",  size = 0.4) +
+#   scale_fill_gradient2(low      = muted("blue"),
+#                        high     = muted("red"),
+#                        mid      = "white",
+#                        midpoint = 0,
+#                        limits   = c(-0.2, 0.85)) +
+#   # labs(title = expression(paste("GMRF, ", zeta))) +
+#   map_theme +
+#   theme(legend.text     = element_text(size = 16/.pt),
+#         legend.key.size = unit(5, "mm"))
+#
+# windows(height = 6.5, width = 6.5);rw_1_mean
+# dev.off()
 
-windows(height = 6.5, width = 6.5);rw_1_mean
-dev.off()
-
-ggsave(plot     = rw_1_mean,
-       filename = "Results/Figures/figure-gmrf_mean.png",
-       width    = 5.5,
-       height   = 5.0,
-       units    = "in")
-
-file.copy(
-  from = "Results/Figures/figure-gmrf_mean.png",
-  to   = "Drafts/Drafts/GAST20210906/figure-gmrf_mean.png",
-  overwrite = TRUE
-)
+# ggsave(plot     = rw_1_mean,
+#        filename = "Results/Figures/figure-gmrf_mean.png",
+#        width    = 5.5,
+#        height   = 5.0,
+#        units    = "in")
+#
+# file.copy(
+#   from = "Results/Figures/figure-gmrf_mean.png",
+#   to   = "Drafts/Drafts/GAST20210906/figure-gmrf_mean.png",
+#   overwrite = TRUE
+# )
 
 # m4_1_field$sd$val_ln <- log(m4_1_field$sd$val)
 # rw_1_sigma <- ggplot(data = m4_1_field$sd) +

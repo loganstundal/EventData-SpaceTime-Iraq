@@ -176,6 +176,14 @@ mesh <- inla.mesh.2d(loc      = cords,
                      offset   = c(0.215, 2.150),
                      cutoff   = 0.27,
                      boundary = irq_bound)
+
+png(filename = "results/figures/figure-mesh.png",
+    width    = 6.5,
+    height   = 6.5,
+    res      = 350,
+    units    = "in")
+plot(mesh, main = "")
+dev.off()
 # ----------------------------------- #
 #-----------------------------------------------------------------------------#
 

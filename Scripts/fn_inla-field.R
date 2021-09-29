@@ -11,8 +11,15 @@
 #-----------------------------------------------------------------------------#
 #
 # Notes:
+#      9/12/2021 -- needs updating. Bad code. Aggregates fields when plotted.
+#      See: figures-inla-apsa_rw_corrected.R for time corrected version.
 #
+# NOTE NOTE NOTE --- THIS CODE IS BAD -- INLA.FIELDS() GRABBED INCORRECT VALS
+# USE CORRECTED VERSION IN "figures-inla-fields_apsa_rw_corrected.R
 #
+# They corrected script and function produce the same rows - so the ggplot
+# is wrong due to a missing facet. BUT -- the summary() result of the field
+# value across all years differs!!! Why???
 #-----------------------------------------------------------------------------#
 
 

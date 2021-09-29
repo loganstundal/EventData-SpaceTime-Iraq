@@ -136,6 +136,24 @@ quantile(res_km, probs = c(0.025, 0.5, 0.975))
 # MAPS                                                                    ----
 #-----------------------------------------------------------------------------#
 # ----------------------------------- #
+# Centroid maps
+# ----------------------------------- #
+map_cent <- ggplot() +
+  geom_sf(data = irq, fill = "gray95") +
+  geom_sf(data = st_centroid(irq)) +
+  map_theme +
+  theme(panel.background = element_blank())
+
+ggsave(plot     = map_cent,
+       filename = "results/figures/figure-cent-map.png",
+       width    = 6.5,
+       height   = 6.5,
+       units    = "in",
+       dpi      = 350)
+# ----------------------------------- #
+
+
+# ----------------------------------- #
 # Tidy half-year id for plot:
 # ----------------------------------- #
 irq_halfyr <- irq_halfyr %>%
